@@ -1,18 +1,18 @@
-# Imagen base ligera con Python
+# Imagen base oficial de Python
 FROM python:3.10-slim
 
-# Establecer el directorio de trabajo
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copiar e instalar dependencias
-COPY requirements.txt .
+# Copia los archivos necesarios
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el código fuente
 COPY . .
 
-# Exponer el puerto esperado por Cloud Run
+# Expone el puerto que Cloud Run usará
+ENV PORT=8080
 EXPOSE 8080
 
-# Arrancar usando Gunicorn
-CMD ["gunicorn", "--bind", ":8080", "main:app"]
+# Comando de arranque con gunicorn
+CMD ["gunicorn", "-b", ":8080", "main:app"]
