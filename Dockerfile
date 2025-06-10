@@ -1,18 +1,19 @@
-# Imagen base oficial de Python
-FROM python:3.10-slim
+FROM python:3.8-slim
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos necesarios
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Copia solo primero los archivos de dependencias
+COPY requirements.txt .
 
+# Instala dependencias primero (mejor para cache)
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copia el resto del código
 COPY . .
 
-# Expone el puerto que Cloud Run usará
-ENV PORT=8080
+# Expone el puerto que Flask/gunicorn usará (opcional pero informativo)
 EXPOSE 8080
 
-# Comando de arranque con gunicorn
-CMD ["gunicorn", "-b", ":8080", "main:app"]
+# CMD para producción con gunicorn (recomendado)
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
+
