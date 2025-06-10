@@ -5,7 +5,6 @@ import os
 
 from flask import Flask, request
 from google.cloud import bigquery
-from google.cloud import billing_budgets_v1
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth import default
@@ -15,6 +14,17 @@ app = Flask(__name__)
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
+
+REQUIRED_ENV_VARS = [
+    "BILLING_ACCOUNT_ID",
+    "BQ_TABLE_FULL",
+    "BQ_PROJECT_ID",
+    "BUDGET_ID"
+]
+
+missing_vars = [var for var in REQUIRED_ENV_VARS if not os.environ.get(var)]
+if missing_vars:
+    raise RuntimeError(f"❌ Faltan variables de entorno requeridas: {', '.join(missing_vars)}")
 
 # Variables de entorno necesarias
 BILLING_ACCOUNT_ID = os.environ.get("BILLING_ACCOUNT_ID")
@@ -31,12 +41,9 @@ PROJECT_IDS = {
 }
 
 def get_budget_limit_usd(billing_account_id: str, budget_id: str) -> float:
-    client = billing_budgets_v1.BudgetServiceClient()
-    name = f"billingAccounts/{billing_account_id}/budgets/{budget_id}"
-    budget = client.get_budget(name=name)
-    if budget.amount.WhichOneof("budget_amount") == "specified_amount":
-        return float(budget.amount.specified_amount.units)
-    raise ValueError("El presupuesto no tiene un límite fijo especificado.")
+    # Simula un límite de presupuesto fijo
+    logging.warning("⚠️ Usando un límite de presupuesto simulado.")
+    return 1000.0  # Reemplaza con el valor que necesites
 
 def get_project_spending(project_id: str) -> float:
     client = bigquery.Client(project=BQ_DATASET_PROJECT)
@@ -113,7 +120,6 @@ def stop_billing_handler():
             "budget_limit": budget_limit,
             "result": result
         }), 200
-
     except Exception as e:
         logging.exception("🔥 Error inesperado")
         return "Internal Server Error", 500
